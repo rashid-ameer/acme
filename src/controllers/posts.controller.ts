@@ -40,7 +40,7 @@ const updatePost = asyncHanlder(async (req: Request, res: Response) => {
   const { postId } = req.params;
   const { title, content } = req.body;
 
-  if (!postId.trim()) {
+  if (!postId || !postId.trim()) {
     throw new ApiError(400, "Post id is required");
   }
 
@@ -73,4 +73,25 @@ const getPosts = asyncHanlder(async (req: Request, res: Response) => {
     .json(new ApiResponse(posts, "Posts fetched successfully"));
 });
 
-export { createPost, deletePost, updatePost, getPosts };
+// get a single post
+const getPost = asyncHanlder(async (req: Request, res: Response) => {
+  const { postId } = req.params;
+
+  // if post id is not found throw error
+  if (!postId || !postId.trim()) {
+    throw new ApiError(400, "Post id is required");
+  }
+
+  // check if the post if present in database
+  const post = await Posts.findById({ _id: postId });
+
+  if (!post) {
+    throw new ApiError(404, "Post not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(post, "Post fetched successfully"));
+});
+
+export { createPost, deletePost, updatePost, getPosts, getPost };
