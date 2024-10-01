@@ -4,6 +4,7 @@ import { ApiError } from "../lib/api-error";
 import { User } from "../models/user.models";
 import { ApiResponse } from "../lib/api-response";
 import { generateAccessToken, generateRefreshToken } from "../lib/utils";
+import { SRequest } from "../lib/types";
 
 const register = asyncHanlder(async (req: Request, res: Response) => {
   const { username, email, password } = req.body;
@@ -77,7 +78,7 @@ const login = asyncHanlder(async (req: Request, res: Response) => {
   const cookieOptions: CookieOptions = {
     httpOnly: true,
     sameSite: "strict",
-    secure: true,
+    secure: process.env.mode === "production",
     maxAge: 15 * 24 * 60 * 60 * 1000,
   };
 
@@ -87,4 +88,34 @@ const login = asyncHanlder(async (req: Request, res: Response) => {
     .json(new ApiResponse(userDTO, "User logged in successfully"));
 });
 
-export { register, login };
+const logout = asyncHanlder(async (req: SRequest, res: Response) => {
+  // check if the cookies has refresh token
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) {
+    return res.sendStatus(204);
+  }
+
+  // get the user
+  const user = await User.findOne({ refreshToken });
+
+  // cookie options
+  const cookieOptions: CookieOptions = {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.mode === "production",
+  };
+
+  if (!user) {
+    res.clearCookie("refreshToken", cookieOptions);
+    return res.sendStatus(204);
+  }
+
+  // clear the refresh token
+  user.refreshToken = "";
+  await user.save();
+
+  res.clearCookie("refreshToken", cookieOptions);
+  return res.sendStatus(204);
+});
+
+export { register, login, logout };

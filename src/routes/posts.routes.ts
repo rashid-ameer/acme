@@ -6,11 +6,15 @@ import {
   getPosts,
   updatePost,
 } from "../controllers/posts.controller";
+import { verifyJWT } from "../middlewares/jwt.middleware";
 
 // creating a router
 const router = Router();
 
-// defining the route
+// protected routes
+// middleware for authorization
+router.use(verifyJWT);
+// middleware for authorization
 router.post("/create", createPost);
 router.delete("/delete/:postId", deletePost);
 router.patch("/update/:postId", updatePost);
