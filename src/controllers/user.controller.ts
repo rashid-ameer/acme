@@ -1,22 +1,23 @@
-import { Request, Response } from "express";
+import { CookieOptions, Request, Response } from "express";
 import { asyncHanlder } from "../lib/async-handler";
 import { ApiError } from "../lib/api-error";
 import { User } from "../models/user.models";
 import { ApiResponse } from "../lib/api-response";
+import { generateAccessToken, generateRefreshToken } from "../lib/utils";
 
 const register = asyncHanlder(async (req: Request, res: Response) => {
   const { username, email, password } = req.body;
 
   //   checking required fields
   if (!username || !email || !password) {
-    throw new ApiError(401, "Missing required field");
+    throw new ApiError(400, "Missing required field");
   }
 
   // check if the user already exist
   const foundUser = await User.findOne({ email });
 
   if (foundUser) {
-    throw new ApiError(401, "User already exist");
+    throw new ApiError(409, "User already exist");
   }
 
   // creating new user
@@ -37,7 +38,7 @@ const login = asyncHanlder(async (req: Request, res: Response) => {
 
   //   if all fields are present
   if (!email || !password) {
-    throw new ApiError(401, "Missing required fields");
+    throw new ApiError(400, "Missing required fields");
   }
 
   // find the user
@@ -45,7 +46,7 @@ const login = asyncHanlder(async (req: Request, res: Response) => {
 
   //   if user is not present
   if (!user) {
-    throw new ApiError(404, "Incorrect email or password");
+    throw new ApiError(401, "Incorrect email or password");
   }
 
   // check if password is valid
@@ -55,13 +56,33 @@ const login = asyncHanlder(async (req: Request, res: Response) => {
     throw new ApiError(401, "Incorrect email or password");
   }
 
+  //   generate access token
+  const accessToken = generateAccessToken(user.id, user.username, user.email);
+  // generate refresh token
+  const refreshToken = generateRefreshToken(user.id);
+
+  //   store refresh token
+  user.refreshToken = refreshToken;
+
+  await user.save();
+
   const userDTO = {
     username: user.username,
     email: user.email,
+    accessToken,
+  };
+
+  // cookie options
+  const cookieOptions: CookieOptions = {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: true,
+    maxAge: 15 * 24 * 60 * 60 * 1000,
   };
 
   return res
     .status(200)
+    .cookie("refreshToken", refreshToken, cookieOptions)
     .json(new ApiResponse(userDTO, "User logged in successfully"));
 });
 

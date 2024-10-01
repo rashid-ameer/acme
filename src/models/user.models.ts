@@ -5,6 +5,7 @@ export interface IUser extends Document {
   username: string;
   email: string;
   password: string;
+  refreshToken: string;
   isPasswordValid(password: string): Promise<boolean>;
 }
 
@@ -27,6 +28,7 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
+    refreshToken: String,
   },
   { timestamps: true }
 );
