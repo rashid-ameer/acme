@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { login, logout, register } from "../controllers/user.controller";
-import { app } from "../app";
 import { verifyJWT } from "../middlewares/jwt.middleware";
 
 // creating router
