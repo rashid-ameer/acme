@@ -67,6 +67,7 @@ const login = asyncHanlder(async (req: Request, res: Response) => {
   await user.save();
 
   const userDTO = {
+    id: user.id,
     username: user.username,
     email: user.email,
     accessToken,

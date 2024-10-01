@@ -6,6 +6,7 @@ export const asyncHanlder =
     try {
       return await fn(req, res, next);
     } catch (error) {
+      // TODO: REMOVE CONSOLE LOG LATER
       console.error(error);
 
       if (error instanceof ApiError) {
